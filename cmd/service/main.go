@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
 
 	"github.com/lrstanley/go-ytdlp"
+	"sundrop.com/tube-loader/pkg/converter"
 	"sundrop.com/tube-loader/pkg/domain"
 )
 
@@ -14,11 +16,27 @@ const (
 )
 
 func main() {
-	DownloadPlaylistAsMp3()
+	slog.Info("Starting tube loader")
+
+	if err := run(context.TODO()); err != nil {
+		slog.Error("error while running tube loader", err.Error())
+	}
 }
 
-func DownloadVideoSection() {
+func run(ctx context.Context) error {
 
+	converterService, err := converter.NewService(ytdlp.New())
+	if err != nil {
+		panic(err)
+	}
+
+	err = converterService.DownloadVideoSection()
+	if err != nil {
+		panic(err)
+	}
+
+	DownloadPlaylistAsMp3()
+	return nil
 }
 
 func DownloadPlaylistAsMp3() {
