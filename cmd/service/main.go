@@ -25,17 +25,27 @@ func main() {
 
 func run(ctx context.Context) error {
 
-	converterService, err := converter.NewService(ytdlp.New())
+	rootPath, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 
-	err = converterService.DownloadVideoSection()
+	dlCommand := ytdlp.New().
+		SetWorkDir(rootPath)
+
+	converterService, err := converter.NewService(dlCommand)
 	if err != nil {
 		panic(err)
 	}
 
-	DownloadPlaylistAsMp3()
+	url := ""
+
+	err = converterService.DownloadVideoSection(url)
+	if err != nil {
+		panic(err)
+	}
+
+	// DownloadPlaylistAsMp3()
 	return nil
 }
 
