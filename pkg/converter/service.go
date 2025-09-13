@@ -50,7 +50,6 @@ func (s *Service) DownloadVideoSection(url string, startTime string, endTime str
 		return err
 	}
 
-	slog.Info("result", result.String())
-
+	slog.Info("result", result.String(), "")
 	return nil
 }

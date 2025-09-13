@@ -19,7 +19,7 @@ func main() {
 	slog.Info("Starting tube loader")
 
 	if err := run(context.TODO()); err != nil {
-		slog.Error("error while running tube loader", err.Error())
+		slog.Error("error while running tube loader", slog.String("error", err.Error()))
 	}
 }
 
