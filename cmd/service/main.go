@@ -39,8 +39,10 @@ func run(ctx context.Context) error {
 	}
 
 	url := ""
+	startTime := "27:00"
+	endTime := "28:00"
 
-	err = converterService.DownloadVideoSection(url)
+	err = converterService.DownloadVideoSection(url, startTime, endTime)
 	if err != nil {
 		panic(err)
 	}
