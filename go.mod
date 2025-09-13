@@ -1,4 +1,4 @@
-module sundrop.com/song-downloader
+module sundrop.com/tube-loader
 
 go 1.25.0
 
