@@ -2,12 +2,18 @@ package converter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"regexp"
 
 	"github.com/lrstanley/go-ytdlp"
 	"sundrop.com/tube-loader/pkg/domain"
+)
+
+const (
+	songLinksPath = "song_links.json"
 )
 
 type Service struct {
@@ -52,4 +58,51 @@ func (s *Service) DownloadVideoSection(url string, startTime string, endTime str
 
 	slog.Info("result", result.String(), "")
 	return nil
+}
+
+// DownloadPlaylistAsMp3 downloads a playlist as mp3
+func (s *Service) DownloadPlaylistAsMp3() error {
+	ValidateRequirements(domain.Mp3)
+
+	rootPath, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	s.command.
+		PresetAlias(domain.Mp3.String()). // Use the "mp3" preset
+		YesPlaylist()                     // Download the whole playlist if it is a video with a playlist parameter
+
+	songLinksPath := rootPath + "/" + songLinksPath
+	data, err := os.ReadFile(songLinksPath)
+	if err != nil {
+		panic(err)
+	}
+
+	var SongLinks struct {
+		Songs []string `json:"songs"`
+	}
+
+	err = json.Unmarshal(data, &SongLinks)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, url := range SongLinks.Songs {
+		_, err := s.command.Run(context.TODO(), url)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return nil
+}
+
+func ValidateRequirements(fileType domain.FileType) {
+	// If yt-dlp isn't installed yet, download and cache it for further use.
+	ytdlp.MustInstall(context.TODO(), nil)
+	if fileType == domain.Mp3 || fileType == domain.Mp4 {
+		// If ffmpeg isn't installed yet, download and cache it for further use.
+		ytdlp.MustInstallFFmpeg(context.TODO(), nil)
+	}
 }

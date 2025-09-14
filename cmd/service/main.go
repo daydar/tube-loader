@@ -51,48 +51,6 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func DownloadPlaylistAsMp3() {
-	ValidateRequirements(domain.Mp3)
-
-	rootPath, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	dlCommand := ytdlp.New().
-		SetWorkDir(rootPath).
-		PresetAlias(domain.Mp3.String()).  // Use the "mp3" preset
-		YesPlaylist().                     // Download the whole playlist if it is a video with a playlist parameter
-		Output("output/%(title)s.%(ext)s") // Output to the "output" directory
-
-	songLinksPath := rootPath + "/" + songLinksPath
-	data, err := os.ReadFile(songLinksPath)
-	if err != nil {
-		panic(err)
-	}
-
-	var SongLinks struct {
-		Songs []string `json:"songs"`
-	}
-
-	err = json.Unmarshal(data, &SongLinks)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, url := range SongLinks.Songs {
-		_, err := dlCommand.Run(context.TODO(), url)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func ValidateRequirements(fileType domain.FileType) {
-	// If yt-dlp isn't installed yet, download and cache it for further use.
-	ytdlp.MustInstall(context.TODO(), nil)
-	if fileType == domain.Mp3 {
-		// If ffmpeg isn't installed yet, download and cache it for further use.
-		ytdlp.MustInstallFFmpeg(context.TODO(), nil)
-	}
+func tidyUp() {
+	fmt.Println("Exited")
 }
