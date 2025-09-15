@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"regexp"
 
 	"github.com/lrstanley/go-ytdlp"
 	"sundrop.com/tube-loader/pkg/domain"
-)
-
-const (
-	songLinksPath = "song_links.json"
 )
 
 type Service struct {
@@ -20,8 +17,16 @@ type Service struct {
 
 // NewService creates a new Service with the given command.
 // The command is passed by pointer because it has a RWMutex lock field
-func NewService(command *ytdlp.Command) (*Service, error) {
-	command = command.
+func NewService() (*Service, error) {
+
+	rootPath, err := os.Getwd()
+	if err != nil {
+		slog.Error("error while getting current working directory", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	command := ytdlp.New().
+		SetWorkDir(rootPath).
 		Output("output/%(title)s.%(ext)s") // Output to the "output" directory
 
 	return &Service{
@@ -30,51 +35,37 @@ func NewService(command *ytdlp.Command) (*Service, error) {
 
 }
 
-// DownloadVideoSection downloads a video section from a given url with the given start and end time
-func (s *Service) DownloadVideo(url string, startTime string, endTime string) error {
-	slog.Info("Starting DownloadVideoSection")
+// Download downloads the song with the given configuration
+func (s *Service) Download(downloadConfiguration *domain.DownloadConfiguration) error {
+	slog.Info("Starting Download...")
 
-	validateRequirements(domain.Mp4)
+	validateRequirements(downloadConfiguration.Format)
 
-	timeRangeRegex, err := generateTimeRangeRegex(startTime, endTime)
-	if err != nil {
-		return err
-	}
-	s.command.
-		PresetAlias(domain.Mp4.String()). // Use the "mp4" preset
-		DownloadSections(timeRangeRegex).
-		YesPlaylist()
+	s.command.PresetAlias(downloadConfiguration.Format.String()) // Use the preset alias for the given file type
 
-	result, err := s.command.Run(context.TODO(), url)
-	if err != nil {
-		return err
+	if downloadConfiguration.WithTimeRange {
+		timeRangeRegex, err := generateTimeRangeRegex(downloadConfiguration.Start, downloadConfiguration.End)
+		if err != nil {
+			slog.Error("error while generating time range regex", slog.String("error", err.Error()))
+			return err
+		}
+
+		s.command.DownloadSections(timeRangeRegex)
 	}
 
-	slog.Info("result", result.String(), "")
-	return nil
-}
+	if downloadConfiguration.WithPlaylist {
+		s.command.YesPlaylist()
+	}
 
-// DownloadAudio downloads an audio section from a given url with the given start and end time
-func (s *Service) DownloadAudio(url string, startTime string, endTime string) error {
-	slog.Info("Starting DownloadAudio")
+	slog.Info("Downloading", slog.String("url", downloadConfiguration.Url))
 
-	validateRequirements(domain.Mp3)
-
-	generateTimeRangeRegex(startTime, endTime)
-	timeRangeRegex, err := generateTimeRangeRegex(startTime, endTime)
+	result, err := s.command.Run(context.TODO(), downloadConfiguration.Url)
 	if err != nil {
+		slog.Error("error while downloading", slog.String("error", err.Error()))
 		return err
 	}
 
-	s.command.
-		PresetAlias(domain.Mp3.String()). // Use the "mp3" preset
-		DownloadSections(timeRangeRegex).
-		YesPlaylist()
-
-	result, err := s.command.Run(context.TODO(), url)
-	if err != nil {
-		return err
-	}
+	slog.Info("Download finished")
 
 	slog.Info("result", result.String(), "")
 	return nil

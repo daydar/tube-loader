@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/lrstanley/go-ytdlp"
 	"sundrop.com/tube-loader/pkg/converter"
 	"sundrop.com/tube-loader/pkg/domain"
 )
@@ -35,23 +33,23 @@ func run(ctx context.Context) error {
 	myWindow.Resize(fyne.NewSize(500, 500))
 
 	// Format Selection
-	formatSelect := widget.NewRadioGroup([]string{"MP3", "MP4"}, func(s string) {})
-	formatSelect.SetSelected("MP3")
+	formatSelect := widget.NewRadioGroup([]string{"mp3", "mp4"}, func(s string) {})
+	formatSelect.SetSelected("mp3")
 
 	// URL Entry
 	urlEntry := widget.NewEntry()
-	urlEntry.SetPlaceHolder("URL eingeben...")
+	urlEntry.SetPlaceHolder("Enter url...")
 
 	// Time Range Entries
 	startTimeEntry := widget.NewEntry()
-	startTimeEntry.SetPlaceHolder("Startzeit (z.B. 00:01:30)")
+	startTimeEntry.SetPlaceHolder("Start Time (e.g. 00:01:30)")
 	startTimeEntry.Disable()
 	endTimeEntry := widget.NewEntry()
-	endTimeEntry.SetPlaceHolder("Endzeit (z.B. 00:05:45)")
+	endTimeEntry.SetPlaceHolder("End Time (e.g. 00:05:45)")
 	endTimeEntry.Disable()
 
 	// Checkbox for time range
-	timeRangeCheck := widget.NewCheck("Mit Time Range", func(checked bool) {
+	timeRangeCheck := widget.NewCheck("With Time Range", func(checked bool) {
 		if checked {
 			startTimeEntry.Enable()
 			endTimeEntry.Enable()
@@ -61,13 +59,17 @@ func run(ctx context.Context) error {
 		endTimeEntry.Disable()
 	})
 
+	// Checkbox for playlist
+	playlistCheck := widget.NewCheck("With Playlist", func(checked bool) {})
+
 	// confirm button
-	confirmButton := widget.NewButton("Download starten", func() {
+	confirmButton := widget.NewButton("Start Download", func() {
 		format := formatSelect.Selected
 		url := urlEntry.Text
 		withTimeRange := timeRangeCheck.Checked
 		startTime := startTimeEntry.Text
 		endTime := endTimeEntry.Text
+		withPlaylist := playlistCheck.Checked
 
 		slog.Info("Format selected", slog.String("format", format))
 		slog.Info("URL", slog.String("url", url))
@@ -75,7 +77,7 @@ func run(ctx context.Context) error {
 		slog.Info("Start", slog.String("startTime", startTime))
 		slog.Info("End", slog.String("endTime", endTime))
 
-		downloadConfiguration := domain.NewDownloadConfiguration(domain.FileType(format), url, withTimeRange, startTime, endTime)
+		downloadConfiguration := domain.NewDownloadConfiguration(domain.FileType(format), url, withTimeRange, startTime, endTime, withPlaylist)
 
 		handleDownloadRequest(downloadConfiguration)
 	})
@@ -85,17 +87,20 @@ func run(ctx context.Context) error {
 		formatSelect,
 		widget.NewLabel("URL:"),
 		urlEntry,
+		layout.NewSpacer(),
 		timeRangeCheck,
 		container.NewGridWithColumns(2,
 			container.NewVBox(
-				widget.NewLabel("Startzeit:"),
+				widget.NewLabel("Start Time:"),
 				startTimeEntry,
 			),
 			container.NewVBox(
-				widget.NewLabel("Endzeit:"),
+				widget.NewLabel("End Time:"),
 				endTimeEntry,
 			),
 		),
+		layout.NewSpacer(),
+		playlistCheck,
 		layout.NewSpacer(),
 		confirmButton,
 		layout.NewSpacer(),
@@ -112,32 +117,16 @@ func run(ctx context.Context) error {
 func handleDownloadRequest(downloadConfiguration *domain.DownloadConfiguration) error {
 	slog.Info("Handling download request")
 
-	rootPath, err := os.Getwd()
+	converterService, err := converter.NewService()
 	if err != nil {
-		panic(err)
-	}
-
-	dlCommand := ytdlp.New().
-		SetWorkDir(rootPath)
-
-	converterService, err := converter.NewService(dlCommand)
-	if err != nil {
+		slog.Error("error while creating converter service", slog.String("error", err.Error()))
 		return err
 	}
 
-	switch downloadConfiguration.Format {
-	case domain.Mp3:
-		err := converterService.DownloadAudio(downloadConfiguration.Url, downloadConfiguration.Start, downloadConfiguration.End)
-		if err != nil {
-			return err
-		}
-	case domain.Mp4:
-		err := converterService.DownloadVideo(downloadConfiguration.Url, downloadConfiguration.Start, downloadConfiguration.End)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown format: %s", downloadConfiguration.Format)
+	err = converterService.Download(downloadConfiguration)
+	if err != nil {
+		slog.Error("error while downloading", slog.String("error", err.Error()))
+		return err
 	}
 
 	return nil
