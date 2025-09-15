@@ -127,12 +127,12 @@ func handleDownloadRequest(downloadConfiguration *domain.DownloadConfiguration) 
 
 	switch downloadConfiguration.Format {
 	case domain.Mp3:
-		err := converterService.DownloadPlaylistAsMp3()
+		err := converterService.DownloadAudio(downloadConfiguration.Url, downloadConfiguration.Start, downloadConfiguration.End)
 		if err != nil {
 			return err
 		}
 	case domain.Mp4:
-		err := converterService.DownloadVideoSection(downloadConfiguration.Url, downloadConfiguration.Start, downloadConfiguration.End)
+		err := converterService.DownloadVideo(downloadConfiguration.Url, downloadConfiguration.Start, downloadConfiguration.End)
 		if err != nil {
 			return err
 		}
