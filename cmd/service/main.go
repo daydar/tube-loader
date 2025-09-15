@@ -26,8 +26,13 @@ func main() {
 	}
 }
 
+// run runs the application
 func run(ctx context.Context) error {
+	setupUI()
+	return nil
+}
 
+func setupUI() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("TubeLoader")
 	myWindow.Resize(fyne.NewSize(500, 500))
@@ -109,8 +114,6 @@ func run(ctx context.Context) error {
 	myWindow.SetContent(content)
 	myWindow.ShowAndRun()
 	tidyUp()
-
-	return nil
 }
 
 // handleDownloadRequest handles the download request with the given configuration
