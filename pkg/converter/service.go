@@ -87,7 +87,7 @@ func generateTimeRangeRegex(startTime string, endTime string) (string, error) {
 		return "", fmt.Errorf("startTime and endTime cannot be empty")
 	}
 
-	startEndtimeRange := regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d\s*-\s*([01]\d|2[0-3]):[0-5]\d(?:\s*,\s*([01]\d|2[0-3]):[0-5]\d\s*-\s*([01]\d|2[0-3]):[0-5]\d)*$`)
+	startEndtimeRange := regexp.MustCompile(`^(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\s*-\s*(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?)(?:\s*,\s*(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\s*-\s*(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?)*$`)
 
 	if !startEndtimeRange.MatchString(startTime + "-" + endTime) {
 		return "", fmt.Errorf("invalid start and end time format")
