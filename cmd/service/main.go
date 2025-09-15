@@ -67,6 +67,10 @@ func setupUI() {
 	// Checkbox for playlist
 	playlistCheck := widget.NewCheck("With Playlist", func(checked bool) {})
 
+	// progress bar
+	progressBar := widget.NewProgressBar()
+	progressBar.Hide()
+
 	// confirm button
 	confirmButton := widget.NewButton("Start Download", func() {
 		format := formatSelect.Selected
@@ -84,7 +88,17 @@ func setupUI() {
 
 		downloadConfiguration := domain.NewDownloadConfiguration(domain.FileType(format), url, withTimeRange, startTime, endTime, withPlaylist)
 
-		handleDownloadRequest(downloadConfiguration)
+		go func() {
+			fyne.Do(func() {
+				progressBar.Show()
+				progressBar.SetValue(0.2)
+			})
+			handleDownloadRequest(downloadConfiguration)
+			fyne.Do(func() {
+				progressBar.SetValue(0.8)
+				progressBar.SetValue(1.0)
+			})
+		}()
 	})
 
 	content := container.NewVBox(
@@ -107,6 +121,7 @@ func setupUI() {
 		layout.NewSpacer(),
 		playlistCheck,
 		layout.NewSpacer(),
+		progressBar,
 		confirmButton,
 		layout.NewSpacer(),
 	)
