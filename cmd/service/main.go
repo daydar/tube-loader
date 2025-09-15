@@ -35,7 +35,7 @@ func run(ctx context.Context) error {
 func setupUI() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("TubeLoader")
-	myWindow.Resize(fyne.NewSize(500, 500))
+	myWindow.Resize(fyne.NewSize(500, 600))
 
 	// Format Selection
 	formatSelect := widget.NewRadioGroup([]string{"mp3", "mp4"}, func(s string) {})
@@ -71,6 +71,10 @@ func setupUI() {
 	progressBar := widget.NewProgressBar()
 	progressBar.Hide()
 
+	// info label
+	resultInfoLabel := widget.NewLabel("Video downloaded at: Downloads/TubeLoader/output")
+	resultInfoLabel.Hide()
+
 	// confirm button
 	confirmButton := widget.NewButton("Start Download", func() {
 		format := formatSelect.Selected
@@ -97,6 +101,7 @@ func setupUI() {
 			fyne.Do(func() {
 				progressBar.SetValue(0.8)
 				progressBar.SetValue(1.0)
+				resultInfoLabel.Show()
 			})
 		}()
 	})
@@ -122,6 +127,8 @@ func setupUI() {
 		playlistCheck,
 		layout.NewSpacer(),
 		progressBar,
+		resultInfoLabel,
+		layout.NewSpacer(),
 		confirmButton,
 		layout.NewSpacer(),
 	)

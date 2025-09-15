@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/lrstanley/go-ytdlp"
@@ -19,14 +20,28 @@ type Service struct {
 // The command is passed by pointer because it has a RWMutex lock field
 func NewService() (*Service, error) {
 
-	rootPath, err := os.Getwd()
+	// rootPath, err := os.Getwd()
+	// if err != nil {
+	// 	slog.Error("error while getting current working directory", slog.String("error", err.Error()))
+	// 	return nil, err
+	// }
+
+	homeDirPath, err := os.UserHomeDir()
+	slog.Info("homeDirPath", slog.String("homeDirPath", homeDirPath))
 	if err != nil {
-		slog.Error("error while getting current working directory", slog.String("error", err.Error()))
+		slog.Error("error while getting downloads folder", slog.String("error", err.Error()))
 		return nil, err
 	}
+	outputPath := filepath.Join(homeDirPath, "Downloads", "TubeLoader")
+	if err := os.MkdirAll(outputPath, os.ModePerm); err != nil {
+		slog.Error("error while creating output directory", slog.String("error", err.Error()))
+		return nil, err
+	}
+	
+	slog.Info("outputPath", slog.String("outputPath", outputPath))
 
 	command := ytdlp.New().
-		SetWorkDir(rootPath).
+		SetWorkDir(outputPath).
 		Output("output/%(title)s.%(ext)s") // Output to the "output" directory
 
 	return &Service{
