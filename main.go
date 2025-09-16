@@ -14,10 +14,6 @@ import (
 	"sundrop.com/tube-loader/pkg/domain"
 )
 
-const (
-	songLinksPath = "song_links.json"
-)
-
 func main() {
 	slog.Info("Starting tube loader")
 
